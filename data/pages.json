@@ -1,0 +1,28 @@
+{
+  "pages": [
+    {
+      "id": "dashboard",
+      "title": "Mayor's Smart Dashboard",
+      "subtitle": "แผนที่ผู้บริหาร ภาพรวมประชาชนกลุ่มเปราะบาง",
+      "icon": "🗺️",
+      "file": "pages/Dashboard-CDP.html",
+      "superadminOnly": false
+    },
+    {
+      "id": "staff",
+      "title": "CDP Staff Portal",
+      "subtitle": "นำเข้าข้อมูล ล้างข้อมูล และจัดการ Master Data",
+      "icon": "🏛️",
+      "file": "pages/Staff-CDP.html",
+      "superadminOnly": false
+    },
+    {
+      "id": "admin",
+      "title": "จัดการสิทธิ์ผู้ใช้งาน",
+      "subtitle": "เพิ่ม/ลบผู้ใช้ และกำหนดสิทธิ์การเข้าถึงแต่ละหน้า (Superadmin เท่านั้น)",
+      "icon": "🛡️",
+      "file": "pages/admin.html",
+      "superadminOnly": true
+    }
+  ]
+}

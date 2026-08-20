@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <script src="../assets/guard.js" data-page="admin"></script>
+    <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDP Portal - จัดการสิทธิ์ผู้ใช้งาน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/theme.css">
+    <style>
+        :root {
+            --primary: #0F172A; --accent: #3B82F6; --danger: #EF4444; --success: #10B981;
+            --bg-body: #F1F5F9; --surface: #FFFFFF; --text-main: #1E293B; --text-muted: #64748B;
+            --border: #E2E8F0; --radius: 10px; --shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kanit', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); min-height: 100vh; }
+
+        .page-header { background: var(--surface); padding: 16px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .page-title { font-size: 1.15rem; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 12px; }
+        .brand-badge { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), #1E293B); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .brand-badge img { width: 22px; height: auto; display: block; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        a.link-back { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; }
+        a.link-back:hover { color: var(--accent); }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 30px; }
+
+        .notice { background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E40AF; border-radius: 8px; padding: 14px 18px; font-size: 0.85rem; line-height: 1.7; margin-bottom: 24px; }
+        .notice b { color: #1E3A8A; }
+
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+        .btn { padding: 9px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
+        .btn-blue { background: var(--accent); color: white; }
+        .btn-blue:hover { background: #2563EB; }
+        .btn-green { background: var(--success); color: white; }
+        .btn-gray { background: white; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-gray:hover { background: #F8FAFC; }
+        .btn-red { background: var(--danger); color: white; padding: 6px 10px; font-size: 0.75rem; }
+
+        .table-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #F8FAFC; padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+        td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 0.9rem; }
+        tr:last-child td { border-bottom: none; }
+
+        .cell-input { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 0.85rem; outline: none; }
+        .cell-input:focus { border-color: var(--accent); }
+        .cell-select { padding: 7px 8px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 0.85rem; }
+        .perm-list { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; }
+        .perm-list label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+        #toast { position: fixed; bottom: 30px; right: 30px; background: var(--success); color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; box-shadow: var(--shadow); transform: translateY(100px); opacity: 0; transition: 0.4s; z-index: 9999; }
+        #toast.show { transform: translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="page-header">
+        <div class="page-title">
+            <span class="brand-badge"><img src="../assets/images/LOGO-AWS.png" alt=""></span>
+            🛡️ จัดการสิทธิ์ผู้ใช้งาน
+        </div>
+        <div class="header-actions">
+            <a class="link-back" href="../index.html">← กลับหน้า Navigator</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="notice">
+            <b>⚠️ ข้อจำกัดของระบบ:</b> เว็บนี้ทำงานบน GitHub Pages ซึ่งเป็น static hosting ไม่มีฐานข้อมูลจริง
+            การเปลี่ยนแปลงที่นี่จะถูก <b>บันทึกไว้เฉพาะเบราว์เซอร์นี้เครื่องนี้เท่านั้น</b> (localStorage)<br>
+            หากต้องการให้มีผลกับผู้ใช้งานทุกคนทุกเครื่อง ให้กด <b>"ส่งออก users.json"</b> ด้านล่าง แล้วนำไฟล์ที่ได้ไป
+            commit/push ทับไฟล์ <code>data/users.json</code> ใน GitHub repository
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-blue" onclick="addUserRow()">➕ เพิ่มผู้ใช้งานใหม่</button>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-gray" onclick="resetToFile()">↩️ ล้างการเปลี่ยนแปลง (กลับไปใช้ไฟล์เดิม)</button>
+                <button class="btn btn-green btn-shimmer" onclick="saveAll()">💾 บันทึกการเปลี่ยนแปลง (เบราว์เซอร์นี้)</button>
+                <button class="btn btn-blue" onclick="exportUsersJson()">⬇️ ส่งออก users.json</button>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:140px;">ชื่อผู้ใช้งาน</th>
+                        <th style="width:200px;">ชื่อ-นามสกุล</th>
+                        <th style="width:130px;">บทบาท</th>
+                        <th style="width:150px;">ตั้ง/เปลี่ยนรหัสผ่าน</th>
+                        <th style="width:180px;">สิทธิ์การเข้าถึงหน้า</th>
+                        <th style="width:70px; text-align:center;">ลบ</th>
+                    </tr>
+                </thead>
+                <tbody id="user-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="toast">✅ บันทึกสำเร็จ</div>
+
+    <script src="../assets/auth.js"></script>
+    <script>
+        let users = [];
+        let pages = [];
+        let assignablePages = [];
+        let rowSeq = 0;
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        async function init() {
+            pages = await CDPAuth.loadPages();
+            assignablePages = pages.filter(p => !p.superadminOnly);
+            users = await CDPAuth.loadUsers();
+            renderRows();
+        }
+
+        function renderRows() {
+            const tbody = document.getElementById('user-tbody');
+            tbody.innerHTML = '';
+            users.forEach((u, idx) => tbody.appendChild(buildRow(u, idx, false)));
+        }
+
+        function buildRow(user, idx, isNew) {
+            const tr = document.createElement('tr');
+            tr.dataset.idx = idx;
+            tr.dataset.isNew = isNew ? '1' : '0';
+
+            const permsHtml = assignablePages.map(p => `
+                <label>
+                    <input type="checkbox" class="perm-check" value="${p.id}" ${user.permissions && user.permissions.includes(p.id) ? 'checked' : ''}>
+                    ${CDPAuth.escapeHtml(p.title)}
+                </label>
+            `).join('');
+
+            tr.innerHTML = `
+                <td><input class="cell-input row-username" value="${CDPAuth.escapeHtml(user.username || '')}" ${isNew ? '' : 'readonly style="background:#F8FAFC;"'}></td>
+                <td><input class="cell-input row-name" value="${CDPAuth.escapeHtml(user.name || '')}"></td>
+                <td>
+                    <select class="cell-select row-role">
+                        <option value="superadmin" ${user.role === 'superadmin' ? 'selected' : ''}>Superadmin</option>
+                        <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                        <option value="staff" ${user.role === 'staff' ? 'selected' : ''}>Staff</option>
+                        <option value="viewer" ${user.role === 'viewer' ? 'selected' : ''}>Viewer</option>
+                    </select>
+                </td>
+                <td><input type="password" class="cell-input row-password" placeholder="${isNew ? 'กำหนดรหัสผ่าน' : 'เว้นว่าง = ไม่เปลี่ยน'}"></td>
+                <td><div class="perm-list">${permsHtml}</div></td>
+                <td style="text-align:center;"><button class="btn btn-red" onclick="deleteRow(this)">✕</button></td>
+            `;
+            return tr;
+        }
+
+        function addUserRow() {
+            const blank = { username: '', name: '', role: 'staff', permissions: [] };
+            const tbody = document.getElementById('user-tbody');
+            const idx = users.length + (rowSeq++);
+            tbody.appendChild(buildRow(blank, idx, true));
+        }
+
+        function deleteRow(btn) {
+            const tr = btn.closest('tr');
+            const usernameInput = tr.querySelector('.row-username');
+            const roleSelect = tr.querySelector('.row-role');
+            if (roleSelect.value === 'superadmin') {
+                const remainingSuperadmins = Array.from(document.querySelectorAll('#user-tbody tr')).filter(r => r !== tr && r.querySelector('.row-role').value === 'superadmin').length;
+                if (remainingSuperadmins === 0) {
+                    alert('⚠️ ต้องมีผู้ใช้งาน Superadmin เหลืออย่างน้อย 1 คนเสมอ');
+                    return;
+                }
+            }
+            if (!confirm('ยืนยันลบผู้ใช้งาน "' + (usernameInput.value || '(ยังไม่ระบุชื่อ)') + '" ?')) return;
+            tr.remove();
+        }
+
+        function readRowsFromDom() {
+            return Array.from(document.querySelectorAll('#user-tbody tr')).map(tr => {
+                const perms = Array.from(tr.querySelectorAll('.perm-check:checked')).map(cb => cb.value);
+                const role = tr.querySelector('.row-role').value;
+                if (role === 'superadmin') assignablePages.forEach(p => { if (!perms.includes(p.id)) perms.push(p.id); });
+                return {
+                    isNew: tr.dataset.isNew === '1',
+                    username: tr.querySelector('.row-username').value.trim(),
+                    name: tr.querySelector('.row-name').value.trim(),
+                    role,
+                    password: tr.querySelector('.row-password').value,
+                    permissions: perms,
+                };
+            });
+        }
+
+        async function saveAll() {
+            const rows = readRowsFromDom();
+
+            const seen = new Set();
+            for (const r of rows) {
+                if (!r.username) { alert('กรุณาระบุชื่อผู้ใช้งานให้ครบทุกแถว'); return; }
+                if (seen.has(r.username.toLowerCase())) { alert('ชื่อผู้ใช้งานซ้ำ: ' + r.username); return; }
+                seen.add(r.username.toLowerCase());
+                if (r.isNew && !r.password) { alert('กรุณากำหนดรหัสผ่านให้ผู้ใช้งานใหม่: ' + r.username); return; }
+            }
+            if (!rows.some(r => r.role === 'superadmin')) {
+                alert('⚠️ ต้องมีผู้ใช้งานที่มีบทบาท Superadmin อย่างน้อย 1 คน'); return;
+            }
+
+            const originalByUsername = {};
+            users.forEach(u => originalByUsername[u.username.toLowerCase()] = u);
+
+            const newUsers = [];
+            for (const r of rows) {
+                const original = originalByUsername[r.username.toLowerCase()];
+                let salt = original ? original.salt : CDPAuth.randomSalt();
+                let hash = original ? original.hash : null;
+                if (r.password) {
+                    salt = CDPAuth.randomSalt();
+                    hash = await CDPAuth.hashPassword(r.password, salt);
+                }
+                if (!hash) { alert('กรุณากำหนดรหัสผ่านให้ผู้ใช้งาน: ' + r.username); return; }
+                newUsers.push({ username: r.username, name: r.name, role: r.role, salt, hash, permissions: r.permissions });
+            }
+
+            users = newUsers;
+            CDPAuth.saveUsersOverride(users);
+            renderRows();
+            showToast('💾 บันทึกแล้ว (เฉพาะเบราว์เซอร์นี้) — อย่าลืม "ส่งออก users.json" เพื่อให้มีผลกับทุกคน');
+        }
+
+        function exportUsersJson() {
+            const rows = readRowsFromDom();
+            if (rows.some(r => !r.username)) { alert('กรุณาระบุชื่อผู้ใช้งานให้ครบก่อน export'); return; }
+            const payload = {
+                _comment: "Default/demo accounts. CHANGE THESE PASSWORDS before real use. See README.md security notes.",
+                users: users,
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'users.json';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function resetToFile() {
+            if (!confirm('ล้างการเปลี่ยนแปลงทั้งหมดในเบราว์เซอร์นี้ และโหลดค่าจากไฟล์ data/users.json ใหม่?')) return;
+            CDPAuth.clearUsersOverride();
+            init();
+        }
+
+        init();
+    </script>
+</body>
+</html>

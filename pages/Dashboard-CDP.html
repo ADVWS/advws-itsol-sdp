@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <script src="../assets/guard.js" data-page="dashboard"></script>
+    <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mayor's Smart Dashboard - CDP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/theme.css">
+
+    <!-- 🚀 นำเข้า Leaflet.js สำหรับแผนที่ของจริง -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        :root {
+            --primary: #0F172A;
+            --accent: #3B82F6;
+            --danger: #EF4444;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --surface: #FFFFFF;
+            --bg-map: #E2E8F0;
+            --text-main: #1E293B;
+            --text-muted: #64748B;
+            --radius: 12px;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            
+            /* 🌙 Dark Theme Colors สำหรับ Profile Drawer */
+            --dark-bg: #131823;
+            --dark-surface: #1C2431;
+            --dark-border: #2A3649;
+            --dark-text: #F8FAFC;
+            --dark-text-muted: #94A3B8;
+            --dark-green-bg: rgba(16, 185, 129, 0.08);
+            --dark-green-border: #059669;
+            --dark-teal-bg: rgba(13, 148, 136, 0.08);
+            --dark-teal-border: #0D9488;
+            --dark-teal-btn: #00BCC1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kanit', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-map); 
+            color: var(--text-main); 
+            height: 100vh; 
+            width: 100vw;
+            overflow: hidden; 
+            position: relative;
+        }
+
+        /* 🗺️ LEAFLET MAP CONTAINER */
+        #map-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        /* ==================================================
+           📍 แก้ไขปัญหา JITTERING (THE FIX) 
+           แยกระหว่าง Wrapper ที่จัดการพิกัด กับ Inner Div ที่จัดการ UI
+        ================================================== */
+        
+        .leaflet-div-icon-wrapper {
+            /* 1. คลาสนี้ให้ Leaflet ถือครองพิกัด ห้ามใส่สไตล์ขอบหรือสี */
+            background: transparent;
+            border: none;
+        }
+
+        .map-pin {
+            /* 2. คลาสนี้คือชั้น UI ที่เราออกแบบ */
+            width: 28px; 
+            height: 28px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            /* เอา margin-top, margin-left ออก เพราะเราตั้งค่า Anchor ใน JS แทนแล้ว */
+        }
+
+        /* ขยายขนาดเฉพาะเนื้อใน (Inner Div) จะไม่ไปกวนพิกัดของ Leaflet ทำให้ไม่กระตุก */
+        .leaflet-div-icon-wrapper:hover .map-pin { 
+            transform: scale(1.4); 
+        }
+        
+        /* -------------------------------------------------- */
+
+        .pin-danger { background-color: var(--danger); animation: pulse-red 2s infinite; }
+        .pin-success { background-color: var(--success); }
+        .pin-warning { background-color: var(--warning); }
+        
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* 🔍 FLOATING SEARCH & FILTERS */
+        .overlay-top-left {
+            position: absolute;
+            top: 20px; left: 20px;
+            z-index: 2000; 
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 400px;
+            max-width: 90vw;
+        }
+
+        .search-box {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 12px 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .search-box input {
+            border: none; width: 100%; font-size: 1rem; outline: none; color: var(--text-main);
+        }
+        .search-box input::placeholder { color: #94a3b8; }
+        
+        #search-suggestions {
+            display: none;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-top: -10px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .suggestion-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+        .suggestion-item:hover { background-color: #f1f5f9; }
+
+        .quick-filters {
+            display: flex; gap: 10px; flex-wrap: wrap;
+        }
+        .filter-pill {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: 0.2s;
+        }
+        .filter-pill.active {
+            background: var(--accent); color: white; border-color: var(--accent);
+        }
+
+        .gps-btn {
+            position: absolute;
+            bottom: 30px; left: 20px;
+            width: 50px; height: 50px;
+            background: var(--surface);
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: var(--shadow);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 2000;
+            border: none;
+            transition: 0.2s;
+        }
+        .gps-btn:hover { background: #f8fafc; transform: scale(1.05); }
+
+        /* 🌙 SINGLE VIEW PROFILE (Dark Theme Drawer) */
+        #profile-drawer {
+            position: absolute;
+            top: 0; right: 0;
+            width: 480px; 
+            max-width: 100vw;
+            height: 100%;
+            background: var(--dark-bg);
+            color: var(--dark-text);
+            box-shadow: -15px 0 30px rgba(0,0,0,0.3);
+            z-index: 2100;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        #profile-drawer.open { transform: translateX(0); }
+
+        .drawer-header {
+            padding: 24px; border-bottom: 1px solid var(--dark-border);
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        .avatar-box {
+            width: 48px; height: 48px; border-radius: 12px; background: #222B3C;
+            display: flex; justify-content: center; align-items: center; font-size: 1.4rem; font-weight: 600; color: #E2E8F0; margin-right: 15px; flex-shrink: 0;
+        }
+        .header-info h2 { font-size: 1.3rem; margin-bottom: 4px; font-weight: 500;}
+        .header-meta { font-size: 0.85rem; color: var(--dark-text-muted); line-height: 1.5; }
+        .header-subtitle { font-size: 0.75rem; color: #00BCC1; text-transform: uppercase; font-weight: 600; letter-spacing: 1px; margin-bottom: 4px;}
+        .close-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--dark-text-muted); transition: 0.2s; }
+        .close-btn:hover { color: white; }
+
+        .drawer-content {
+            padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px;
+        }
+
+        /* 🗂️ Cards UI */
+        .card-section { border-radius: 12px; padding: 16px; }
+        .card-welfare { background: var(--dark-green-bg); border: 1px solid var(--dark-green-border); }
+        .card-issues { background: var(--dark-surface); border: 1px solid var(--dark-border); }
+        .card-household { background: var(--dark-teal-bg); border: 1px solid var(--dark-teal-border); }
+
+        .card-title { font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .title-green { color: var(--success); }
+        .title-gray { color: var(--dark-text-muted); }
+        .title-teal { color: #00BCC1; }
+
+        .data-list { font-size: 0.9rem; }
+        .data-item { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start;}
+        .data-item:last-child { margin-bottom: 0; }
+        .icon-check { color: var(--success); font-size: 1rem; margin-top: 2px;}
+        .icon-warn { color: var(--dark-text-muted); font-size: 1rem; margin-top: 2px;}
+
+        /* 👨‍👩‍👧‍👦 Household Member Cards */
+        .hh-meta { font-size: 0.8rem; color: var(--dark-text-muted); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;}
+        .hh-badge { background: #0F5A5E; color: #5EEAD4; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; }
+        
+        .member-card { background: #171E29; border: 1px solid var(--dark-border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+        .member-card:last-child { margin-bottom: 0; }
+        .member-header { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;}
+        .member-name { font-size: 0.95rem; font-weight: 500; }
+        .tag-role { background: #2A3649; color: #CBD5E1; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; }
+        .tag-active { background: #004d4f; color: #5EEAD4; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; }
+
+        /* 🔘 Action Buttons */
+        .drawer-footer { padding: 20px 24px; border-top: 1px solid var(--dark-border); background: var(--dark-bg); display: flex; gap: 12px; }
+        .btn-action { flex: 1; padding: 14px; border-radius: 8px; border: none; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-call { background: var(--dark-surface); border: 1px solid var(--dark-border); color: var(--dark-text); }
+        .btn-call:hover { background: #2A3649; }
+        .btn-task { background: var(--dark-teal-btn); color: #022C22; font-weight: 600; }
+        .btn-task:hover { background: #06b6d4; }
+
+        /* 🏷️ BRAND WATERMARK */
+        .dashboard-watermark {
+            position: absolute; bottom: 16px; right: 16px; z-index: 1500;
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(6px);
+            padding: 7px 14px 7px 10px; border-radius: 999px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            pointer-events: none; user-select: none;
+        }
+        .dashboard-watermark img { height: 18px; width: auto; display: block; }
+        .dashboard-watermark span { font-size: 0.72rem; color: #E2E8F0; letter-spacing: 0.5px; }
+    </style>
+</head>
+<body>
+
+    <div id="map-container"></div>
+
+    <div class="overlay-top-left">
+        <div class="search-box">
+            <span style="font-size:1.2rem;">🔍</span>
+            <input type="text" id="searchInput" placeholder="พิมพ์ชื่อ, เลข ปชช., หรือบ้านเลขที่..." onkeyup="handleSearch()">
+        </div>
+        <div id="search-suggestions"></div>
+
+        <div class="quick-filters">
+            <button class="filter-pill active" onclick="applyFilter(this, 'all')">แสดงทั้งหมด</button>
+            <button class="filter-pill" onclick="applyFilter(this, 'elderly')">👴 ผู้สูงอายุ</button>
+            <button class="filter-pill" onclick="applyFilter(this, 'bedridden')">🛌 ผู้ป่วยติดเตียง</button>
+            <button class="filter-pill" onclick="applyFilter(this, 'disabled')">🦽 ผู้พิการ</button>
+            <button class="filter-pill" onclick="applyFilter(this, 'vulnerable')">🚨 กลุ่มเปราะบาง</button>
+        </div>
+    </div>
+
+    <button class="gps-btn" onclick="locateGPS()" title="ย้ายไปยังตำแหน่งปัจจุบัน">📍</button>
+
+    <div class="dashboard-watermark">
+        <img src="../assets/images/LOGO-AWS.png" alt="IT Solutions">
+        <span>IT Solutions · CDP</span>
+    </div>
+
+    <!-- 🌙 DARK THEME PROFILE DRAWER -->
+    <div id="profile-drawer">
+        <div class="drawer-header">
+            <div style="display: flex;">
+                <div class="avatar-box" id="pf-avatar">ก</div>
+                <div class="header-info">
+                    <div class="header-subtitle">SINGLE VIEW PROFILE</div>
+                    <h2 id="pf-name">ชื่อ-นามสกุล</h2>
+                    <div class="header-meta">
+                        เลขบัตร <span id="pf-id">x-xxxx-xxxxx-xx-x</span> · อายุ <span id="pf-age">0</span> ปี<br>
+                        ที่อยู่ <span id="pf-address">ที่อยู่</span>
+                    </div>
+                </div>
+            </div>
+            <button class="close-btn" onclick="closeProfile()">✕</button>
+        </div>
+        
+        <div class="drawer-content">
+            
+            <div class="card-section card-welfare">
+                <div class="card-title title-green">✓ ประวัติสวัสดิการ</div>
+                <div class="data-list" id="pf-welfare-personal"></div>
+            </div>
+
+            <div class="card-section card-issues">
+                <div class="card-title title-gray">⚠ ปัญหาร้องเรียนล่าสุด</div>
+                <div class="data-list" id="pf-issues"></div>
+            </div>
+            
+            <div class="card-section card-household">
+                <div class="card-title title-teal" style="justify-content: space-between;">
+                    <span>👥 สวัสดิการระดับครัวเรือน</span>
+                    <span class="hh-badge" id="pf-hh-badge">บ้านเลขที่</span>
+                </div>
+                <div class="hh-meta">
+                    <span id="pf-hh-summary">ครัวเรือนนี้มีสมาชิก 0 คน · ผู้รับสิทธิ์ 0 คน · รวม 0 สิทธิ์</span>
+                </div>
+                <div id="pf-family"></div>
+            </div>
+        </div>
+
+        <div class="drawer-footer">
+            <button class="btn-action btn-call" onclick="triggerCall()">📞 โทรประสานงาน</button>
+            <button class="btn-action btn-task" onclick="promptTask()">⚡ สั่งการด่วน</button>
+        </div>
+    </div>
+
+    <script src="../assets/auth.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', () => CDPAuth.mountUserBadge());</script>
+    <script>
+        // 🚀 FULL MOCKUP DATA (20 เคสจัดเต็ม)
+        const citizenData = [
+            { 
+                id: 1, lat: 13.7563, lng: 100.5018, name: "นาย ประเสริฐ ทองดี", nid: "3-1009-XXXXX-XX-8", age: 70, address: "301 ถ.เทศบาล 2", type: "elderly", status: "success", 
+                personalWelfare: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "700 บ./เดือน" }],
+                issues: [],
+                family: [
+                    { name: "นาย ประเสริฐ ทองดี", role: "หัวหน้าครัวเรือน", age: 70, isTarget: true, welfares: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "700 บ./เดือน" }] },
+                    { name: "นาง วันดี ทองดี", role: "คู่สมรส", age: 67, isTarget: false, welfares: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "600 บ./เดือน" }] }
+                ]
+            },
+            { 
+                id: 2, lat: 13.7580, lng: 100.5040, name: "นาง สมหญิง ใจกล้า", nid: "3-1010-XXXXX-XX-2", age: 82, address: "88/1 ชุมชนตลาดเก่า", type: "bedridden", status: "danger", 
+                personalWelfare: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }, { name: "ผ้าอ้อมผู้ใหญ่", status: "รอดำเนินการ", detail: "กองสาธารณสุข" }],
+                issues: ["ต้องการคนดูแลช่วงกลางวันด่วน", "เตียงลมชำรุด"],
+                family: [
+                    { name: "นาง สมหญิง ใจกล้า", role: "มารดา (ผู้ป่วย)", age: 82, isTarget: true, welfares: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }] },
+                    { name: "น.ส. อรทัย ใจกล้า", role: "บุตรสาว (หัวหน้าครัวเรือน)", age: 45, isTarget: false, welfares: [] }
+                ]
+            },
+            { 
+                id: 3, lat: 13.7540, lng: 100.4990, name: "ด.ช. พงศกร สายน้ำ", nid: "1-1022-XXXXX-XX-1", age: 10, address: "44 ซ.สุขสวัสดิ์", type: "disabled", status: "warning", 
+                personalWelfare: [{ name: "เบี้ยความพิการ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }],
+                issues: ["ไม่ได้เข้าเรียนต่อโรงเรียนเฉพาะทาง"],
+                family: [
+                    { name: "นาย วีระ สายน้ำ", role: "บิดา (หัวหน้าครัวเรือน)", age: 40, isTarget: false, welfares: [{ name: "บัตรสวัสดิการแห่งรัฐ", status: "ได้รับครบถ้วน", detail: "300 บ./เดือน" }] },
+                    { name: "ด.ช. พงศกร สายน้ำ", role: "บุตร", age: 10, isTarget: true, welfares: [{ name: "เบี้ยความพิการ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }] }
+                ] 
+            },
+            { id: 4, lat: 13.7555, lng: 100.5060, name: "นาย วันชัย เจริญทรัพย์", nid: "3-1005-XXXXX-XX-2", age: 75, address: "9/2 ชุมชนพัฒนา", type: "elderly", status: "success", personalWelfare: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "700 บ./เดือน" }], issues: [], family: [{ name: "นาย วันชัย เจริญทรัพย์", role: "ตนเอง (อยู่ลำพัง)", age: 75, isTarget: true, welfares: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "700 บ./เดือน" }] }] },
+            { id: 5, lat: 13.7520, lng: 100.5025, name: "นาง วิไล พรหมมินทร์", nid: "3-1012-XXXXX-XX-3", age: 28, address: "112 ชุมชนริมคลอง", type: "vulnerable", status: "danger", personalWelfare: [{ name: "บัตรสวัสดิการแห่งรัฐ", status: "ได้รับครบถ้วน", detail: "300 บ./เดือน" }], issues: ["หลังคาบ้านรั่วซึมหนักช่วงหน้าฝน"], family: [{ name: "นาง วิไล พรหมมินทร์", role: "มารดา (หัวหน้าครัวเรือน)", age: 28, isTarget: true, welfares: [{ name: "บัตรสวัสดิการแห่งรัฐ", status: "ได้รับครบถ้วน", detail: "300 บ./เดือน" }] }, { name: "ด.ญ. ฟ้าใส พรหมมินทร์", role: "บุตรสาว", age: 1, isTarget: false, welfares: [{ name: "เงินอุดหนุนเด็กแรกเกิด", status: "ได้รับครบถ้วน", detail: "600 บ./เดือน" }] }] },
+            { id: 6, lat: 13.7595, lng: 100.5005, name: "นาย บุญส่ง มั่นคง", nid: "3-1015-XXXXX-XX-4", age: 62, address: "55/2 ถ.หลักเมือง", type: "disabled", status: "warning", personalWelfare: [{ name: "เบี้ยความพิการ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }], issues: ["รอคิวรับรถเข็นวีลแชร์ (คิวที่ 5)"], family: [{ name: "นาย บุญส่ง มั่นคง", role: "หัวหน้าครัวเรือน", age: 62, isTarget: true, welfares: [{ name: "เบี้ยความพิการ", status: "ได้รับ", detail: "800 บ./เดือน" }] }] },
+            { id: 7, lat: 13.7570, lng: 100.4980, name: "นาง อมรา ศรีสุข", nid: "3-1011-XXXXX-XX-5", age: 78, address: "201 ชุมชนวัดเก่า", type: "elderly", status: "success", personalWelfare: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "700 บ./เดือน" }], issues: [], family: [{ name: "นาง อมรา ศรีสุข", role: "ตนเอง (อยู่ลำพัง)", age: 78, isTarget: true, welfares: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "700 บ./เดือน" }] }] },
+            { id: 8, lat: 13.7515, lng: 100.5055, name: "นาย เกษม ทรงพล", nid: "3-1020-XXXXX-XX-6", age: 45, address: "89 ซ.ร่วมใจ", type: "disabled", status: "success", personalWelfare: [{ name: "เบี้ยความพิการ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }], issues: [], family: [{ name: "นาย เกษม ทรงพล", role: "หัวหน้าครัวเรือน", age: 45, isTarget: true, welfares: [{ name: "เบี้ยความพิการ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }] }] },
+            { id: 9, lat: 13.7600, lng: 100.5030, name: "ด.ญ. กะทิ สุขสวัสดิ์", nid: "1-1025-XXXXX-XX-7", age: 6, address: "77/7 ชุมชนโรงสี", type: "vulnerable", status: "danger", personalWelfare: [{ name: "นมและอาหารเสริม", status: "ได้รับครบถ้วน", detail: "รพ.สต." }], issues: ["น้ำหนักและส่วนสูงต่ำกว่าเกณฑ์มาตรฐาน"], family: [{ name: "นาง ยาย สุขสวัสดิ์", role: "ยาย (หัวหน้าครัวเรือน)", age: 70, isTarget: false, welfares: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "700 บ./เดือน" }] }, { name: "ด.ญ. กะทิ สุขสวัสดิ์", role: "หลานสาว", age: 6, isTarget: true, welfares: [] }] },
+            { id: 10, lat: 13.7530, lng: 100.5080, name: "นาย สมชาย แซ่ล้อ", nid: "3-1008-XXXXX-XX-8", age: 62, address: "33 ถ.วงแหวน", type: "elderly", status: "success", personalWelfare: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "600 บ./เดือน" }], issues: [], family: [{ name: "นาย สมชาย แซ่ล้อ", role: "ตนเอง (อยู่ลำพัง)", age: 62, isTarget: true, welfares: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "600 บ./เดือน" }] }] },
+            { id: 11, lat: 13.7585, lng: 100.4975, name: "นาง ปราณี รัตนวงศ์", nid: "3-1014-XXXXX-XX-9", age: 80, address: "14 ซ.ทิพย์", type: "bedridden", status: "danger", personalWelfare: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }], issues: ["อสม. แจ้งลูกหลานทิ้งให้อยู่ลำพัง ไม่มีข้าวกิน"], family: [{ name: "นาง ปราณี รัตนวงศ์", role: "ตนเอง", age: 80, isTarget: true, welfares: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับ", detail: "800 บ./เดือน" }] }] },
+            { id: 12, lat: 13.7505, lng: 100.5000, name: "นาย ชูชาติ ชัยชนะ", nid: "3-1016-XXXXX-XX-0", age: 50, address: "90/1 ชุมชนตลาดใหม่", type: "disabled", status: "success", personalWelfare: [{ name: "เบี้ยความพิการ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }], issues: [], family: [{ name: "นาย ชูชาติ ชัยชนะ", role: "ตนเอง", age: 50, isTarget: true, welfares: [{ name: "เบี้ยความพิการ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }] }] },
+            { id: 13, lat: 13.7568, lng: 100.5090, name: "นาง ยุพา สุขุม", nid: "3-1021-XXXXX-XX-2", age: 85, address: "55 ซ.สุขุม", type: "elderly", status: "warning", personalWelfare: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ระงับสิทธิชั่วคราว", detail: "บัตรประชาชนหมดอายุ" }], issues: ["ต้องการทำบัตร ปชช. นอกสถานที่"], family: [{ name: "นาง ยุพา สุขุม", role: "ตนเอง (อยู่ลำพัง)", age: 85, isTarget: true, welfares: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ระงับ", detail: "เนื่องจากบัตรหมดอายุ" }] }] },
+            { id: 14, lat: 13.7545, lng: 100.4960, name: "นาย สุรพล คงเมือง", nid: "3-1002-XXXXX-XX-4", age: 40, address: "101 ชุมชนวัดโพธิ์", type: "vulnerable", status: "danger", personalWelfare: [{ name: "เงินเยียวยาอัคคีภัย", status: "กำลังดำเนินการ", detail: "รอโอน" }], issues: ["ไฟไหม้บ้านหมดทั้งหลัง ต้องการที่พักพิง"], family: [{ name: "นาย สุรพล คงเมือง", role: "หัวหน้าครัวเรือน", age: 40, isTarget: true, welfares: [] }, { name: "นาง วันดี คงเมือง", role: "ภรรยา", age: 38, isTarget: false, welfares: [] }] },
+            { id: 15, lat: 13.7590, lng: 100.5050, name: "ด.ญ. นิดา รักเรียน", nid: "1-1026-XXXXX-XX-6", age: 14, address: "22/2 ถ.การศึกษา", type: "vulnerable", status: "warning", personalWelfare: [{ name: "ทุนการศึกษาเทศบาล", status: "ได้รับครบถ้วน", detail: "ปี 2568" }], issues: ["เสี่ยงออกกลางคัน ขาดเรียนบ่อยไปช่วยแม่ทำงาน"], family: [{ name: "นาง นวล รักเรียน", role: "มารดา (หัวหน้าครัวเรือน)", age: 39, isTarget: false, welfares: [{ name: "บัตรสวัสดิการแห่งรัฐ", status: "ได้รับ", detail: "300 บ." }] }, { name: "ด.ญ. นิดา รักเรียน", role: "บุตร", age: 14, isTarget: true, welfares: [{ name: "ทุนการศึกษา", status: "ได้รับ", detail: "ปี 68" }] }] },
+            { id: 16, lat: 13.7525, lng: 100.4985, name: "นาง สมพร งามขำ", nid: "3-1018-XXXXX-XX-8", age: 66, address: "3/3 ชุมชนคลองตัน", type: "elderly", status: "success", personalWelfare: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "600 บ./เดือน" }], issues: [], family: [{ name: "นาง สมพร งามขำ", role: "มารดา", age: 66, isTarget: true, welfares: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "600 บ./เดือน" }] }] },
+            { id: 17, lat: 13.7510, lng: 100.5070, name: "นาย ทรงชัย มีทรัพย์", nid: "3-1004-XXXXX-XX-0", age: 55, address: "40 ถ.เจริญกรุง", type: "disabled", status: "danger", personalWelfare: [{ name: "เบี้ยความพิการ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }], issues: ["ทางลาดวีลแชร์พังทลาย ออกจากบ้านไม่ได้"], family: [{ name: "นาย ทรงชัย มีทรัพย์", role: "ตนเอง (อยู่ลำพัง)", age: 55, isTarget: true, welfares: [{ name: "เบี้ยความพิการ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }] }] },
+            { id: 18, lat: 13.7575, lng: 100.4950, name: "นาง สุนีย์ แสงทอง", nid: "3-1013-XXXXX-XX-4", age: 88, address: "19 ซอยแสงทอง", type: "bedridden", status: "success", personalWelfare: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "800 บ./เดือน" }, { name: "ผ้าอ้อมผู้ใหญ่", status: "ได้รับทุกเดือน", detail: "อสม. จัดส่ง" }], issues: [], family: [{ name: "นาง สุนีย์ แสงทอง", role: "ยาย (ผู้ป่วย)", age: 88, isTarget: true, welfares: [{ name: "เบี้ยยังชีพ", status: "ได้รับ", detail: "800 บ." }, { name: "ผ้าอ้อม", status: "ได้รับ", detail: "สม่ำเสมอ" }] }] },
+            { id: 19, lat: 13.7550, lng: 100.5035, name: "ด.ช. ต้นกล้า มาดี", nid: "1-1028-XXXXX-XX-2", age: 10, address: "66 ถ.พระราม", type: "vulnerable", status: "success", personalWelfare: [{ name: "ทุนเด็กยากจน", status: "ได้รับครบถ้วน", detail: "ส.ค. 69" }], issues: [], family: [{ name: "นาง สมหญิง มาดี", role: "มารดา (หัวหน้าครัวเรือน)", age: 30, isTarget: false, welfares: [{ name: "บัตรสวัสดิการแห่งรัฐ", status: "ได้รับ", detail: "300 บ." }] }, { name: "ด.ช. ต้นกล้า มาดี", role: "บุตร", age: 10, isTarget: true, welfares: [{ name: "ทุนเด็กยากจน", status: "ได้รับ", detail: "ส.ค. 69" }] }] },
+            { id: 20, lat: 13.7610, lng: 100.5010, name: "นาย สมพงษ์ ใจเย็น", nid: "3-1007-XXXXX-XX-6", age: 71, address: "100 ชุมชนท้ายตลาด", type: "elderly", status: "warning", personalWelfare: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "700 บ./เดือน" }], issues: ["ลืมไปรับยาโรคเบาหวาน 2 เดือนติด"], family: [{ name: "นาย สมพงษ์ ใจเย็น", role: "ตนเอง (อยู่ลำพัง)", age: 71, isTarget: true, welfares: [{ name: "เบี้ยยังชีพผู้สูงอายุ", status: "ได้รับครบถ้วน", detail: "700 บ./เดือน" }] }] }
+        ];
+
+        // -----------------------------------------
+        // 💻 MAP INITIALIZATION (Leaflet.js)
+        // -----------------------------------------
+        
+        const map = L.map('map-container', { zoomControl: false }).setView([13.7555, 100.5020], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        // 🛠️ THE FIX: ใช้ Div ชั้นนอก (leaflet-div-icon-wrapper) ยึดพิกัดด้วย iconAnchor อย่างแม่นยำ
+        // และให้ .map-pin ซ้อนอยู่ด้านในจัดการเรื่อง UI และ Hover เท่านั้น
+        const createCustomIcon = (statusClass) => {
+            return L.divIcon({ 
+                className: 'leaflet-div-icon-wrapper', 
+                html: `<div class="map-pin ${statusClass}"></div>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14] // จัดกึ่งกลางเป๊ะๆ ทำให้หมุดไม่ขยับเวลาซูมหรือเลื่อนแผนที่
+            });
+        };
+
+        const iconDanger = createCustomIcon('pin-danger');
+        const iconWarning = createCustomIcon('pin-warning');
+        const iconSuccess = createCustomIcon('pin-success');
+
+        let markers = [];
+
+        citizenData.forEach(citizen => {
+            let selectedIcon = iconSuccess;
+            if(citizen.status === 'danger') selectedIcon = iconDanger;
+            if(citizen.status === 'warning') selectedIcon = iconWarning;
+
+            const marker = L.marker([citizen.lat, citizen.lng], { icon: selectedIcon }).addTo(map);
+            marker.customData = citizen;
+
+            marker.on('click', function(e) {
+                L.DomEvent.stopPropagation(e);
+                openProfile(citizen.id);
+            });
+            markers.push(marker);
+        });
+
+        map.on('click', function() { closeProfile(); });
+
+        // -----------------------------------------
+        // 💻 UX/UI Logics
+        // -----------------------------------------
+
+        function openProfile(citizenId) {
+            const data = citizenData.find(c => c.id === citizenId);
+            if(!data) return;
+
+            map.flyTo([data.lat, data.lng], 16, { animate: true, duration: 0.5 });
+
+            document.getElementById('pf-avatar').innerText = data.name.charAt(4) || data.name.charAt(0);
+            document.getElementById('pf-name').innerText = data.name;
+            document.getElementById('pf-id').innerText = data.nid;
+            document.getElementById('pf-age').innerText = data.age;
+            document.getElementById('pf-address').innerText = data.address;
+            document.getElementById('pf-hh-badge').innerText = `บ้านเลขที่ ${data.address.split(' ')[0]}`;
+
+            // ✅ SECTION 1
+            const welfareDiv = document.getElementById('pf-welfare-personal');
+            if(data.personalWelfare.length > 0) {
+                welfareDiv.innerHTML = data.personalWelfare.map(w => `
+                    <div class="data-item">
+                        <div class="icon-check">✓</div>
+                        <div>
+                            <div style="font-weight: 500;">${w.name}</div>
+                            <div style="font-size: 0.8rem; color: var(--dark-text-muted);">${w.detail} - ${w.status}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                welfareDiv.innerHTML = `<div style="color:var(--dark-text-muted);">- ไม่พบประวัติการรับสวัสดิการส่วนตัว -</div>`;
+            }
+
+            // 🚨 SECTION 2
+            const issueDiv = document.getElementById('pf-issues');
+            if(data.issues.length > 0) {
+                issueDiv.innerHTML = data.issues.map(i => `
+                    <div class="data-item">
+                        <div class="icon-warn">⚠</div>
+                        <div style="color: #cbd5e1;">${i}</div>
+                    </div>
+                `).join('');
+            } else {
+                issueDiv.innerHTML = `<div style="color:var(--dark-text-muted);">ไม่มีเรื่องร้องเรียนค้างอยู่</div>`;
+            }
+
+            // 👨‍👩‍👧‍👦 SECTION 3
+            const familyDiv = document.getElementById('pf-family');
+            let totalMembers = data.family.length;
+            let totalRecipients = 0;
+            let totalWelfareCount = 0;
+
+            if(totalMembers > 0) {
+                const familyHTML = data.family.map(member => {
+                    const hasWelfare = member.welfares && member.welfares.length > 0;
+                    if (hasWelfare) { totalRecipients++; totalWelfareCount += member.welfares.length; }
+
+                    const welfareHTML = hasWelfare 
+                        ? member.welfares.map(w => `
+                            <div style="display:flex; gap:8px; align-items:flex-start; margin-top: 8px;">
+                                <div class="icon-check" style="font-size:0.8rem;">✓</div>
+                                <div>
+                                    <div style="font-weight: 500; font-size:0.85rem; color:#E2E8F0;">${w.name}</div>
+                                    <div style="font-size:0.75rem; color:var(--dark-text-muted);">${w.detail} - ${w.status}</div>
+                                </div>
+                            </div>
+                        `).join('')
+                        : `<div style="font-size:0.75rem; color:var(--dark-text-muted); margin-top:4px;">ไม่มีข้อมูลสวัสดิการภาครัฐ</div>`;
+
+                    return `
+                        <div class="member-card">
+                            <div class="member-header">
+                                <span class="member-name">${member.name}</span>
+                                <span class="tag-role">${member.role} · ${member.age} ปี</span>
+                                ${member.isTarget ? `<span class="tag-active">โปรไฟล์ที่เลือก</span>` : ''}
+                            </div>
+                            <div style="padding-left: 5px;">
+                                ${welfareHTML}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('pf-hh-summary').innerText = `ครัวเรือนนี้มีสมาชิก ${totalMembers} คน · ผู้รับสิทธิ์ ${totalRecipients} คน · รวม ${totalWelfareCount} สิทธิ์`;
+                familyDiv.innerHTML = familyHTML;
+            } else {
+                document.getElementById('pf-hh-summary').innerText = `ข้อมูลครัวเรือนไม่สมบูรณ์`;
+                familyDiv.innerHTML = `<div style="color:var(--dark-text-muted); text-align:center; padding: 20px 0;">ไม่พบข้อมูลสมาชิกในทะเบียนราษฎร</div>`;
+            }
+
+            document.getElementById('profile-drawer').classList.add('open');
+            document.getElementById('search-suggestions').style.display = 'none';
+        }
+
+        function closeProfile() {
+            document.getElementById('profile-drawer').classList.remove('open');
+            document.getElementById('search-suggestions').style.display = 'none';
+        }
+
+        let searchTimeout;
+        function handleSearch() {
+            clearTimeout(searchTimeout);
+            const input = document.getElementById('searchInput').value.trim().toLowerCase();
+            const suggBox = document.getElementById('search-suggestions');
+            
+            if(input.length < 3) {
+                suggBox.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                const results = citizenData.filter(item => 
+                    item.name.toLowerCase().includes(input) || item.nid.replace(/-/g, '').includes(input.replace(/-/g, ''))
+                );
+
+                if(results.length > 0) {
+                    suggBox.innerHTML = results.map(r => `
+                        <div class="suggestion-item" onclick="selectSearchResult(${r.id})">
+                            <strong style="color:var(--primary);">${r.name}</strong> <span style="color:#64748B; font-size:0.8rem;">(เลข ปชช: ${r.nid})</span>
+                        </div>
+                    `).join('');
+                    suggBox.style.display = 'block';
+                } else {
+                    suggBox.innerHTML = `<div class="suggestion-item" style="color:#94a3b8;">ไม่พบข้อมูลประชาชนที่ค้นหา</div>`;
+                    suggBox.style.display = 'block';
+                }
+            }, 300);
+        }
+
+        function selectSearchResult(id) {
+            document.getElementById('searchInput').value = ""; 
+            openProfile(id);
+        }
+
+        function applyFilter(btnElement, filterType) {
+            document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            markers.forEach(marker => {
+                if(filterType === 'all' || marker.customData.type === filterType) {
+                    if (!map.hasLayer(marker)) map.addLayer(marker); 
+                } else {
+                    if (map.hasLayer(marker)) map.removeLayer(marker); 
+                }
+            });
+            closeProfile();
+        }
+
+        function locateGPS() {
+            const btn = document.querySelector('.gps-btn');
+            btn.innerHTML = '⏳'; 
+            setTimeout(() => {
+                btn.innerHTML = '📍';
+                map.flyTo([13.7555, 100.5020], 16, { animate: true, duration: 1 });
+            }, 800);
+        }
+
+        function triggerCall() {
+            alert('📞 กำลังเปิดแอปโทรศัพท์: เชื่อมต่อ อสม. / ผู้ดูแล ประจำพื้นที่');
+        }
+
+        function promptTask() {
+            const task = prompt("สร้างใบงานด่วน (พิมพ์คำสั่ง หรือเลือก Template ยอดนิยม):\n\n[1] ส่งทีมพยาบาลเยี่ยมบ้านด่วน\n[2] ซ่อมแซมบ้านที่อยู่อาศัย\n[3] ขอบริจาคถุงยังชีพ\n", "1");
+            if(task) {
+                alert(`✅ ยิงใบงานดิจิทัลไปยัง 'หน่วยงานที่เกี่ยวข้อง' เรียบร้อยแล้ว!\n(ระบบจะติดตามสถานะ SLA ให้อัตโนมัติ)`);
+            }
+        }
+
+    </script>
+</body>
+</html>

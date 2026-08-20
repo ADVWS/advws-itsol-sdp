@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDP Portal - เข้าสู่ระบบ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/theme.css">
+    <style>
+        :root {
+            --primary: #0F172A;
+            --accent: #3B82F6;
+            --danger: #EF4444;
+            --success: #10B981;
+            --bg-body: #F1F5F9;
+            --surface: #FFFFFF;
+            --text-main: #1E293B;
+            --text-muted: #64748B;
+            --border: #E2E8F0;
+            --radius: 12px;
+            --shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kanit', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); min-height: 100vh; }
+
+        /* ============ LOGIN VIEW — split screen ============ */
+        #view-login { min-height: 100vh; display: flex; }
+
+        /* ---- left: form ---- */
+        .login-left {
+            flex: 1 1 460px; max-width: 480px; min-width: 340px;
+            background: var(--surface); display: flex; align-items: center; justify-content: center;
+            padding: 40px; position: relative; z-index: 1;
+        }
+        .login-form-box { width: 100%; max-width: 320px; }
+        .login-eyebrow { font-size: 0.7rem; font-weight: 600; color: var(--brand-slate); letter-spacing: 2px; margin-bottom: 14px; }
+        .login-heading { font-size: 1.5rem; font-weight: 600; color: var(--primary); margin-bottom: 8px; }
+        .login-subheading { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 28px; line-height: 1.6; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; }
+        .form-input { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; outline: none; transition: 0.2s; }
+        .form-input:focus { border-color: var(--brand-cyan); box-shadow: 0 0 0 3px rgba(34,211,238,0.18); }
+        .input-with-icon { position: relative; }
+        .input-with-icon .form-input { padding-right: 42px; }
+        .toggle-password {
+            position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; padding: 6px; color: var(--text-muted);
+            display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: color 0.15s ease;
+        }
+        .toggle-password:hover { color: var(--text-main); }
+        .toggle-password svg { width: 20px; height: 20px; }
+        .toggle-password .icon-eye-off { display: none; }
+        .btn-login { width: 100%; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, var(--accent), #6366F1); color: white; font-size: 0.95rem; font-weight: 500; cursor: pointer; margin-top: 6px; transition: 0.2s; }
+        .btn-login:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 8px 16px -6px rgba(59,130,246,0.5); }
+        .btn-login:active { transform: translateY(0); }
+        .login-error { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; margin-bottom: 16px; display: none; }
+
+        /* ---- right: description / illustration ---- */
+        .login-right {
+            flex: 1 1 auto; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
+            padding: 60px; background: radial-gradient(ellipse at top, #1E293B 0%, var(--primary) 55%, #060A13 100%);
+        }
+        .login-right-inner { position: relative; z-index: 1; max-width: 460px; text-align: left; }
+        .login-right-eyebrow { color: var(--brand-cyan); font-size: 0.72rem; font-weight: 600; letter-spacing: 2.5px; margin-bottom: 14px; }
+        .login-right-title { color: #F8FAFC; font-size: 1.65rem; font-weight: 600; margin-bottom: 14px; line-height: 1.35; }
+        .login-right-desc { color: #94A3B8; font-size: 0.9rem; line-height: 1.8; margin-bottom: 36px; }
+        .login-feature-list { list-style: none; display: flex; flex-direction: column; gap: 22px; }
+        .login-feature-list li { display: flex; align-items: flex-start; gap: 16px; }
+        .login-feature-list li > div { display: flex; flex-direction: column; gap: 3px; padding-top: 4px; }
+        .login-feature-list b { color: #F8FAFC; font-size: 0.95rem; font-weight: 600; }
+        .login-feature-list span { color: #94A3B8; font-size: 0.82rem; line-height: 1.6; }
+        .feat-icon {
+            flex-shrink: 0; width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, rgba(34,211,238,0.22), rgba(167,139,250,0.22));
+            border: 1px solid rgba(255,255,255,0.16); box-shadow: 0 6px 16px -6px rgba(34,211,238,0.25);
+        }
+        .feat-icon svg { width: 26px; height: 26px; }
+
+        @media (max-width: 900px) {
+            .login-right { display: none; }
+            .login-left { flex: 1 1 100%; max-width: 100%; }
+        }
+
+        /* ============ NAVIGATOR VIEW ============ */
+        #view-nav { display: none; }
+        .nav-header {
+            position: relative; overflow: hidden;
+            background: linear-gradient(120deg, #0B1220 0%, var(--primary) 55%, #1E293B 100%);
+            padding: 16px 30px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .nav-header .brand-lockup .brand-word { color: #F8FAFC; }
+        .nav-user { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; font-size: 0.85rem; color: #CBD5E1; }
+        .nav-user b { color: #F8FAFC; }
+        .btn-logout { position: relative; z-index: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #FCA5A5; padding: 7px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-family: inherit; transition: 0.2s; }
+        .btn-logout:hover { background: rgba(239,68,68,0.15); border-color: #EF4444; }
+
+        .nav-body-wrap { position: relative; overflow: hidden; }
+        .nav-body { position: relative; z-index: 1; padding: 40px 30px; max-width: 1000px; margin: 0 auto; }
+        .nav-heading { font-size: 1.1rem; font-weight: 500; color: var(--text-main); margin-bottom: 20px; }
+        .tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+        .tile {
+            position: relative; overflow: hidden;
+            background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px 24px 22px;
+            text-decoration: none; color: inherit; display: block; border: 1px solid var(--border);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+        .tile::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--brand-cyan), var(--brand-violet));
+            transform: scaleX(0); transform-origin: left; transition: transform 0.3s ease;
+        }
+        .tile:hover { transform: translateY(-4px); border-color: transparent; box-shadow: 0 20px 30px -10px rgba(15,23,42,0.18); }
+        .tile:hover::before { transform: scaleX(1); }
+        .tile-icon { font-size: 2rem; margin-bottom: 12px; display: inline-block; transition: transform 0.3s ease; }
+        .tile:hover .tile-icon { transform: scale(1.15) rotate(-4deg); }
+        .tile-title { font-size: 1.05rem; font-weight: 600; color: var(--primary); margin-bottom: 6px; }
+        .tile-subtitle { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+        .empty-state { text-align: center; color: var(--text-muted); padding: 60px 20px; }
+
+        .denied-banner { background: #FFFBEB; border: 1px solid #FCD34D; color: #B45309; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem; max-width: 1000px; margin-left: auto; margin-right: auto; }
+    </style>
+</head>
+<body>
+
+    <!-- ============ LOGIN VIEW ============ -->
+    <div id="view-login">
+
+        <!-- left: login form -->
+        <div class="login-left">
+            <div class="login-form-box">
+                <div class="login-eyebrow brand-fade-up">IT SOLUTIONS &nbsp;·&nbsp; CDP PORTAL</div>
+                <div class="login-heading brand-fade-up" style="animation-delay:60ms">เข้าสู่ระบบ</div>
+                <div class="login-subheading brand-fade-up" style="animation-delay:100ms">กรุณากรอกชื่อผู้ใช้งานและรหัสผ่านเพื่อดำเนินการเข้าใช้งานระบบ</div>
+
+                <div class="login-error" id="login-error"></div>
+
+                <form id="login-form" class="brand-fade-up" style="animation-delay:140ms">
+                    <div class="form-group">
+                        <label class="form-label">ชื่อผู้ใช้งาน</label>
+                        <input type="text" id="login-username" class="form-input" autocomplete="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">รหัสผ่าน</label>
+                        <div class="input-with-icon">
+                            <input type="password" id="login-password" class="form-input" autocomplete="current-password" required>
+                            <button type="button" class="toggle-password" id="toggle-password" aria-label="แสดงรหัสผ่าน">
+                                <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0112 19c-7 0-11-7-11-7a20.4 20.4 0 015.06-5.94M9.9 4.24A10.94 10.94 0 0112 4c7 0 11 7 11 7a20.4 20.4 0 01-2.86 3.83"/><path d="M14.12 14.12a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-login btn-shimmer" id="btn-login">เข้าสู่ระบบ</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- right: description / illustration -->
+        <div class="login-right" id="login-right">
+            <div class="brand-blob cyan" style="width:320px; height:320px; top:-80px; left:-100px;"></div>
+            <div class="brand-blob violet" style="width:300px; height:300px; bottom:-100px; right:-60px;"></div>
+
+            <div class="login-right-inner">
+                <div class="login-right-eyebrow brand-fade-up">CITIZEN DATA PLATFORM</div>
+                <div class="login-right-title brand-fade-up" style="animation-delay:60ms">ระบบข้อมูลประชาชนเชิงบูรณาการ</div>
+                <div class="login-right-desc brand-fade-up" style="animation-delay:100ms">แพลตฟอร์มกลางสำหรับหน่วยงาน เพื่อการบริหารจัดการข้อมูลสวัสดิการสังคม ติดตามกลุ่มเปราะบาง และประสานงานปฏิบัติการภาคสนามแบบเรียลไทม์ในระบบเดียว</div>
+                <ul class="login-feature-list">
+                    <li class="brand-fade-up" style="animation-delay:160ms">
+                        <span class="feat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6.5v14l7-3.5 8 3.5 7-3.5v-14l-7 3.5-8-3.5-7 3.5z"/><path d="M8 3v14"/><path d="M16 6.5v14"/></svg>
+                        </span>
+                        <div><b>แผนที่สถานการณ์เรียลไทม์</b><span>ภาพรวมกลุ่มเปราะบางทั้งพื้นที่สำหรับผู้บริหาร ในหน้าจอเดียว</span></div>
+                    </li>
+                    <li class="brand-fade-up" style="animation-delay:220ms">
+                        <span class="feat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="8.5" ry="3"/><path d="M3.5 5.5v6c0 1.66 3.8 3 8.5 3s8.5-1.34 8.5-3v-6"/><path d="M3.5 11.5v6c0 1.66 3.8 3 8.5 3s8.5-1.34 8.5-3v-6"/></svg>
+                        </span>
+                        <div><b>ฐานข้อมูลหลักเดียวกัน</b><span>นำเข้า ตรวจสอบ และรวมข้อมูลประชาชนเป็น Master Data ชุดเดียว</span></div>
+                    </li>
+                    <li class="brand-fade-up" style="animation-delay:280ms">
+                        <span class="feat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l7.5 3v6c0 5.2-3.2 9-7.5 10.5C7.7 20.5 4.5 16.7 4.5 11.5v-6l7.5-3z"/><path d="M8.7 12l2.3 2.3 4.3-4.6"/></svg>
+                        </span>
+                        <div><b>ควบคุมสิทธิ์การเข้าถึง</b><span>กำหนดสิทธิ์การเข้าถึงระบบงานแต่ละส่วนตามบทบาทผู้ใช้งาน</span></div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ NAVIGATOR VIEW ============ -->
+    <div id="view-nav">
+        <div class="nav-header">
+            <div class="brand-lockup">
+                <img src="assets/images/LOGO-AWS.png" alt="IT Solutions">
+                <div class="brand-word">
+                    <span class="b-title">IT Solutions</span>
+                    <span class="b-sub">CDP Portal</span>
+                </div>
+            </div>
+            <div class="nav-user">
+                <span>👤 <b id="nav-user-name"></b> (<span id="nav-user-role"></span>)</span>
+                <button class="btn-logout" id="btn-logout">ออกจากระบบ</button>
+            </div>
+        </div>
+        <div class="nav-body-wrap">
+            <div class="brand-blob cyan" style="width:280px; height:280px; top:-60px; right:-60px; opacity:0.15;"></div>
+            <div class="brand-blob violet" style="width:260px; height:260px; bottom:-80px; left:-60px; opacity:0.12;"></div>
+            <div class="nav-body">
+                <div class="denied-banner" id="denied-banner" style="display:none;"></div>
+                <div class="nav-heading">เลือกระบบที่ต้องการเข้าใช้งาน</div>
+                <div class="tile-grid" id="tile-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/auth.js"></script>
+    <script>
+        const viewLogin = document.getElementById('view-login');
+        const viewNav = document.getElementById('view-nav');
+
+        function showError(msg) {
+            const el = document.getElementById('login-error');
+            el.textContent = msg;
+            el.style.display = 'block';
+
+            const box = document.querySelector('.login-form-box');
+            box.classList.remove('brand-shake');
+            void box.offsetWidth; // restart animation
+            box.classList.add('brand-shake');
+        }
+
+        async function renderNavigator() {
+            const session = CDPAuth.getSession();
+            if (!session) { viewLogin.style.display = 'flex'; viewNav.style.display = 'none'; return; }
+
+            viewLogin.style.display = 'none';
+            viewNav.style.display = 'block';
+            document.getElementById('nav-user-name').textContent = session.name;
+            document.getElementById('nav-user-role').textContent = session.role;
+
+            const params = new URLSearchParams(window.location.search);
+            const denied = params.get('denied');
+            if (denied) {
+                const banner = document.getElementById('denied-banner');
+                banner.textContent = '⚠️ คุณไม่มีสิทธิ์เข้าถึงหน้า "' + denied + '" กรุณาติดต่อผู้ดูแลระบบหากคิดว่าควรมีสิทธิ์เข้าถึง';
+                banner.style.display = 'block';
+            }
+
+            const pages = await CDPAuth.loadPages();
+            const grid = document.getElementById('tile-grid');
+            const allowed = pages.filter(p => CDPAuth.canAccess(session, p.id));
+
+            if (allowed.length === 0) {
+                grid.innerHTML = '';
+                grid.parentElement.insertAdjacentHTML('beforeend', '<div class="empty-state">ยังไม่มีสิทธิ์เข้าถึงหน้าใดๆ กรุณาติดต่อผู้ดูแลระบบ</div>');
+                return;
+            }
+
+            grid.innerHTML = allowed.map((p, i) => `
+                <a class="tile brand-fade-up" style="animation-delay:${i * 70}ms" href="${p.file}">
+                    <div class="tile-icon">${p.icon}</div>
+                    <div class="tile-title">${CDPAuth.escapeHtml(p.title)}</div>
+                    <div class="tile-subtitle">${CDPAuth.escapeHtml(p.subtitle)}</div>
+                </a>
+            `).join('');
+        }
+
+        document.getElementById('toggle-password').addEventListener('click', function () {
+            const input = document.getElementById('login-password');
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            this.querySelector('.icon-eye').style.display = show ? 'none' : 'block';
+            this.querySelector('.icon-eye-off').style.display = show ? 'block' : 'none';
+            this.setAttribute('aria-label', show ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน');
+        });
+
+        document.getElementById('login-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            document.getElementById('login-error').style.display = 'none';
+            const btn = document.getElementById('btn-login');
+            btn.disabled = true; btn.textContent = 'กำลังตรวจสอบ...';
+
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const result = await CDPAuth.login(username, password);
+                if (!result.ok) {
+                    showError(result.error);
+                } else {
+                    window.history.replaceState({}, '', 'index.html');
+                    await renderNavigator();
+                }
+            } catch (err) {
+                showError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่');
+            } finally {
+                btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+            }
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', function () {
+            CDPAuth.logout();
+            window.location.href = 'index.html';
+        });
+
+        renderNavigator();
+    </script>
+</body>
+</html>

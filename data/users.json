@@ -1,0 +1,37 @@
+{
+  "_comment": "Default/demo accounts. CHANGE THESE PASSWORDS before real use. See README.md security notes — this file is public on GitHub Pages, only hashes are stored, never plaintext.",
+  "users": [
+    {
+      "username": "superadmin",
+      "name": "ผู้ดูแลระบบสูงสุด",
+      "role": "superadmin",
+      "salt": "f6a46b44775a62b0",
+      "hash": "a5c63f29ab4154ea35248bcf6dbc08bda1c4d972f72e620b841c31c0b227eeef",
+      "permissions": ["dashboard", "staff", "admin"]
+    },
+    {
+      "username": "admin",
+      "name": "ผู้บริหาร (นายกเทศมนตรี)",
+      "role": "admin",
+      "salt": "8955565e89f3e155",
+      "hash": "cfe05399d4b1d530c08d90f3b67ad62ab9d5cc570d29e6ac1df4952b9ac00f55",
+      "permissions": ["dashboard", "staff"]
+    },
+    {
+      "username": "staff1",
+      "name": "เจ้าหน้าที่กองสวัสดิการสังคม",
+      "role": "staff",
+      "salt": "920a7e31e8dc9d8d",
+      "hash": "5cdac16ff604d5cc878402d2520337e4620dbb673fe0d66f997d4f07b763245d",
+      "permissions": ["staff"]
+    },
+    {
+      "username": "viewer",
+      "name": "ผู้เยี่ยมชม (สาธิต)",
+      "role": "viewer",
+      "salt": "5ffa09e6206b4d1b",
+      "hash": "8f1c303487b9249e29d9440c630927bde22c60e57aebb45f367f7ff1979d91b1",
+      "permissions": ["dashboard"]
+    }
+  ]
+}

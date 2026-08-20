@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <script src="../assets/guard.js" data-page="staff"></script>
+    <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDP V4 - Executive Pitch Prototype</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/theme.css">
+
+    <style>
+        :root {
+            /* Design System Colors */
+            --primary: #1E293B;
+            --accent: #3B82F6;
+            --bg-body: #F1F5F9; 
+            --surface: #FFFFFF;
+            --text-main: #0F172A; 
+            --text-muted: #64748B; 
+            --border: #E2E8F0; 
+            
+            /* Blueprint V4 Specific Colors */
+            --btn-blue: #2563EB;     
+            --btn-green: #10B981;    
+            --btn-gray: #64748B;     
+            --btn-dark-blue: #1E3A8A;
+            --btn-red: #EF4444;      
+            
+            /* Validation UI */
+            --critical-bg: #FEF2F2;
+            --critical-text: #991B1B;
+            --critical-border: #EF4444;
+            --warning-bg: #FFFBEB;
+            --warning-text: #B45309;
+            --warning-border: #F59E0B;
+            
+            --radius: 10px; 
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kanit', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
+
+        /* ================= SIDEBAR ================= */
+        .sidebar { width: 260px; background: var(--primary); color: white; display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; box-shadow: 2px 0 10px rgba(0,0,0,0.1);}
+        .brand { padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .menu-list { padding: 15px 0; flex: 1; }
+        .menu-item { padding: 12px 20px; color: #94A3B8; cursor: pointer; transition: 0.2s; font-size: 0.95rem; display: flex; align-items: center; gap: 10px; border-left: 3px solid transparent; }
+        .menu-item:hover { color: white; background: rgba(255,255,255,0.05); }
+        .menu-item.active { color: white; background: rgba(255,255,255,0.1); border-left-color: var(--brand-cyan); font-weight: 500; box-shadow: inset 0 0 20px rgba(34,211,238,0.06); }
+        .user-profile { padding: 20px; background: rgba(0,0,0,0.2); font-size: 0.8rem; color: #94A3B8; border-top: 1px solid rgba(255,255,255,0.05);}
+
+        /* ================= MAIN CONTENT ================= */
+        .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        
+        .header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 10; }
+        .view-title { font-size: 1.3rem; font-weight: 600; color: var(--primary); }
+        .header-actions { display: flex; gap: 10px; }
+        
+        .btn { padding: 9px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-pdf { background: var(--btn-red); color: white; }
+        .btn-sync { background: var(--btn-dark-blue); color: white; }
+        .btn-green { background: var(--btn-green); color: white; }
+        .btn-blue { background: var(--btn-blue); color: white; }
+
+        .content-scroll { padding: 25px 30px; overflow-y: auto; flex: 1; display: none; flex-direction: column; gap: 20px; }
+        .content-scroll.active { display: flex; animation: fadeIn 0.3s ease; } 
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ================= MODULE 1: INBOX ================= */
+        .kanban-board { display: flex; gap: 20px; height: 100%; min-height: 500px;}
+        .kanban-col { flex: 1; background: #E2E8F0; border-radius: var(--radius); padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+        .kanban-title { font-weight: 600; font-size: 0.95rem; color: var(--text-main); margin-bottom: 5px; display: flex; justify-content: space-between;}
+        
+        .task-card { background: var(--surface); border-radius: 6px; padding: 15px; box-shadow: var(--shadow); border-left: 4px solid var(--accent); transition: 0.2s;}
+        .task-card h4 { font-size: 1rem; margin-bottom: 5px; }
+        .task-card p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; }
+
+        /* ================= MODULE 2 & 3: UPLOAD & CLEANSING ================= */
+        .table-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); display: flex; flex-direction: column; flex: 1; overflow: hidden; min-height: 400px;}
+        .table-toolbar { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #F8FAFC;}
+        .table-wrapper { overflow-y: auto; flex: 1; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        th { background: #F1F5F9; padding: 12px 16px; text-align: left; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 0 var(--border);}
+        td { padding: 0; border-bottom: 1px solid var(--border); position: relative; }
+
+        /* Inline Edit UX */
+        .cell-content { padding: 12px 16px; font-size: 0.9rem; cursor: pointer; min-height: 44px; display: flex; align-items: center; transition: 0.2s; }
+        .cell-input { width: 100%; height: 100%; padding: 12px 16px; border: 2px solid var(--accent); border-radius: 4px; outline: none; font-family: inherit; font-size: 0.9rem; display: none; position: absolute; top: 0; left: 0; z-index: 5; }
+        td.editing .cell-content { visibility: hidden; }
+        td.editing .cell-input { display: block; }
+
+        /* Validation Colors */
+        .td-critical { background: var(--critical-bg); animation: flash-red 2s infinite; }
+        .td-critical .cell-content { color: var(--critical-text); font-weight: 500; }
+        @keyframes flash-red { 0% { background: transparent; } 50% { background: var(--critical-bg); } 100% { background: transparent; } }
+        
+        .td-warning { background: var(--warning-bg); }
+        .td-warning .cell-content { color: var(--warning-text); font-weight: 500; }
+
+        .cell-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; white-space: nowrap; opacity: 0; pointer-events: none; transition: 0.2s; z-index: 20; margin-bottom: 5px; box-shadow: var(--shadow); }
+        td:hover .cell-tooltip { opacity: 1; }
+        .btn-undo { background: none; border: 1px solid var(--border); color: var(--text-muted); border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.75rem; }
+
+        /* ================= MODULE 4: CONFLICT RESOLVER ================= */
+        .conflict-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow); margin-bottom:20px;}
+        .conflict-header { background: #FEF2F2; color: #991B1B; padding: 15px 20px; font-weight: 600; border-bottom: 1px solid #FECACA; display: flex; justify-content: space-between; align-items: center;}
+        .compare-grid { display: grid; grid-template-columns: 1fr 1fr; }
+        .compare-col { padding: 20px; }
+        .compare-col:first-child { border-right: 1px solid var(--border); }
+        .col-source { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 15px; }
+        .data-row { display: flex; flex-direction: column; margin-bottom: 15px; }
+        .data-label { font-size: 0.75rem; color: var(--text-muted); }
+        .data-val { font-size: 0.95rem; font-weight: 500; padding: 8px 12px; background: #F8FAFC; border-radius: 6px; margin-top: 4px; border: 1px solid var(--border);}
+        .val-conflict { background: #FFFBEB; border-color: #FCD34D; color: #B45309; }
+
+        /* ================= MODULE 5: MASTER DATA DRAWER ================= */
+        #master-drawer {
+            position: fixed; top: 0; right: 0; width: 550px; max-width: 100vw; height: 100vh;
+            background: var(--surface); box-shadow: -10px 0 25px rgba(0,0,0,0.1); z-index: 2000;
+            display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        #master-drawer.open { transform: translateX(0); }
+        .drawer-header { padding: 20px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #F8FAFC;}
+        .drawer-body { padding: 25px; overflow-y: auto; flex: 1; }
+        .drawer-footer { padding: 20px 25px; border-top: 1px solid var(--border); display: flex; gap: 10px; background: #F8FAFC;}
+        
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+        .form-input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 0.95rem; outline: none; transition: 0.2s;}
+        .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+
+        .welfare-section { background: #F8FAFC; border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-top: 20px; }
+        .welfare-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; background: white; padding: 10px; border-radius: 6px; border: 1px solid var(--border); }
+        .welfare-row input, .welfare-row select { padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 0.85rem;}
+
+        /* Toast */
+        #toast { position: fixed; bottom: 30px; right: 30px; background: var(--btn-green); color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; box-shadow: var(--shadow); transform: translateY(100px); opacity: 0; transition: 0.4s; z-index: 9999; }
+        #toast.show { transform: translateY(0); opacity: 1; }
+        
+        /* Modal for Task Reporting */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); display: none; justify-content: center; align-items: center; z-index: 3000; backdrop-filter: blur(2px);}
+        .modal-card { background: var(--surface); width: 500px; border-radius: var(--radius); padding: 25px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); transform: translateY(20px); transition: 0.3s;}
+        .modal-overlay.active { display: flex; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="brand brand-lockup">
+            <img src="../assets/images/LOGO-AWS.png" alt="IT Solutions">
+            <div class="brand-word">
+                <span class="b-title">IT Solutions</span>
+                <span class="b-sub">CDP Staff Portal</span>
+            </div>
+        </div>
+        <div class="menu-list">
+            <div class="menu-item active" onclick="switchTab('view-inbox', this)">📥 Inbox รับงานดิจิทัล</div>
+            <div class="menu-item" onclick="switchTab('view-upload', this)">📂 นำเข้า & ล้างข้อมูล Excel</div>
+            <div class="menu-item" onclick="switchTab('view-conflict', this)">🔀 ไกล่เกลี่ยข้อมูลซ้ำซ้อน</div>
+            <div class="menu-item" onclick="switchTab('view-master', this)">🗄️ คลังข้อมูล Master Data</div>
+        </div>
+        <div class="user-profile">👤 กองสวัสดิการสังคม<br>เข้าสู่ระบบ: 08:30 น.</div>
+    </div>
+
+    <!-- MAIN AREA -->
+    <div class="main-area">
+        
+        <!-- HEADER (Module 5) -->
+        <div class="header">
+            <div class="view-title" id="header-title">Inbox รับงานดิจิทัล (Task Management)</div>
+            <div class="header-actions">
+                <button class="btn btn-pdf" onclick="showToast('🟥 สร้าง PDF รายงานสถิติและเตรียมดาวน์โหลดเรียบร้อยแล้ว')">📄 ส่งออกรายงาน PDF</button>
+                <button class="btn btn-sync" onclick="showToast('📤 ซิงค์ข้อมูลทั้งหมดขึ้น Data Lake ให้ผู้บริหารเรียบร้อย!')">☁️ ส่งข้อมูลขึ้นคลังกลาง</button>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 1: INBOX KANBAN ================= -->
+        <div class="content-scroll active" id="view-inbox">
+            <div class="kanban-board">
+                <div class="kanban-col">
+                    <div class="kanban-title"><span>🆕 งานใหม่ (New)</span></div>
+                    <div class="task-card" id="task-1">
+                        <h4>🚑 ส่งทีมพยาบาลเยี่ยมบ้านด่วน</h4>
+                        <p>บ้านเลขที่ 123/45 (เคสผู้ป่วยติดเตียงวิกฤต)</p>
+                        <button class="btn btn-blue" style="width:100%; justify-content:center;" onclick="acceptTask('task-1')">🔵 กดรับงาน</button>
+                    </div>
+                </div>
+                <div class="kanban-col" id="col-progress">
+                    <div class="kanban-title"><span>⏳ กำลังดำเนินการ</span></div>
+                    <div class="task-card" id="task-2" style="border-left-color: var(--warning-border);">
+                        <h4>📦 ขอบริจาคถุงยังชีพ</h4>
+                        <p>ชุมชนตลาดเก่า (ครอบครัวยากจนรุนแรง)</p>
+                        <button class="btn btn-green" style="width:100%; justify-content:center;" onclick="openResolveModal('task-2')">🟢 รายงานผลหน้างาน</button>
+                    </div>
+                </div>
+                <div class="kanban-col" id="col-resolved">
+                    <div class="kanban-title"><span>✅ เสร็จสิ้น (Resolved)</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 2: DATA CLEANSING (Upload + Quality Table) ================= -->
+        <div class="content-scroll" id="view-upload">
+            <div style="background: var(--surface); padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow); border: 2px dashed #CBD5E1; text-align: center; cursor: pointer; transition: 0.3s;" onclick="simulateUpload(this)" onmouseover="this.style.borderColor='var(--accent)';" onmouseout="this.style.borderColor='#CBD5E1';">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">📂</div>
+                <div style="font-size: 1.1rem; font-weight: 500;">คลิกเพื่ออัปโหลดไฟล์ Excel / CSV ประจำเดือน</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">ระบบจะทำ Chunk Upload สกัดการหลุดอัตโนมัติ</div>
+            </div>
+
+            <div class="table-card" id="quality-table-section" style="display:none;">
+                <div class="table-toolbar">
+                    <div>
+                        <strong style="color: var(--primary);">📋 ตารางตรวจทานข้อมูล (Quality Table)</strong>
+                        <span style="font-size: 0.85rem; color: var(--text-muted); margin-left:10px;">* ดับเบิ้ลคลิกช่องที่มีสีเพื่อแก้ไข</span>
+                    </div>
+                    <button class="btn btn-green" id="btn-batch-save" onclick="batchSaveCleansing()">🟢 บันทึกข้อมูลแก้ไขทั้งหมด (Batch Save)</button>
+                </div>
+                <div class="table-wrapper">
+                    <table id="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px; text-align: center;">แถว</th>
+                                <th style="width: 200px;">เลขประจำตัวประชาชน (13 หลัก)</th>
+                                <th style="width: 200px;">ชื่อ-นามสกุล</th>
+                                <th style="width: 150px;">เบอร์โทรศัพท์ (10 หลัก)</th>
+                                <th style="width: 150px;">สวัสดิการ (Mapping)</th>
+                                <th style="width: 80px; text-align: center;">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 3: CONFLICT RESOLVER ================= -->
+        <div class="content-scroll" id="view-conflict">
+            <p style="color: var(--text-muted);">ระบบตรวจพบข้อมูลของประชาชนที่มีเลข ปชช. ตรงกัน แต่รายละเอียดภายในขัดแย้งกัน</p>
+            <div class="conflict-card" id="conflict-case-1">
+                <div class="conflict-header">
+                    <span>⚠️ ขัดแย้ง: ประวัติเบอร์โทรศัพท์และที่อยู่ไม่ตรงกัน</span>
+                    <span style="font-size: 0.85rem;">เลข ปชช: 3-1009-01234-56-8 (นาย สมศักดิ์ รักดี)</span>
+                </div>
+                <div class="compare-grid">
+                    <div class="compare-col">
+                        <div class="col-source">อัปโหลดล่าสุด: กองสวัสดิการสังคม (12/08/2026)</div>
+                        <div class="data-row"><span class="data-label">ชื่อ-นามสกุล</span><span class="data-val">นาย สมศักดิ์ รักดี</span></div>
+                        <div class="data-row"><span class="data-label">เบอร์โทรศัพท์</span><span class="data-val val-conflict">081-234-5678</span></div>
+                        <div class="data-row"><span class="data-label">ที่อยู่</span><span class="data-val val-conflict">123/45 ซ.4 ชุมชนร่มเย็น</span></div>
+                        <button class="btn btn-blue" style="width: 100%; justify-content: center; margin-top: 10px;" onclick="resolveConflict('conflict-case-1')">ผสานและใช้เวอร์ชันนี้เป็น Master</button>
+                    </div>
+                    <div class="compare-col">
+                        <div class="col-source">ฐานข้อมูลกลางเดิม: งานทะเบียนราษฎร (01/01/2025)</div>
+                        <div class="data-row"><span class="data-label">ชื่อ-นามสกุล</span><span class="data-val">นาย สมศักดิ์ รักดี</span></div>
+                        <div class="data-row"><span class="data-label">เบอร์โทรศัพท์</span><span class="data-val val-conflict">089-999-0000 (เบอร์เก่า)</span></div>
+                        <div class="data-row"><span class="data-label">ที่อยู่</span><span class="data-val val-conflict">99 ถ.เทศบาล (ตามทะเบียนบ้าน)</span></div>
+                        <button class="btn btn-blue" style="width: 100%; justify-content: center; margin-top: 10px;" onclick="resolveConflict('conflict-case-1')">ผสานและใช้เวอร์ชันนี้เป็น Master</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 4: MASTER DATA (DIRECT ENTRY) ================= -->
+        <div class="content-scroll" id="view-master">
+            <div class="table-card">
+                <div class="table-toolbar">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <strong style="color: var(--primary);">🗂️ ฐานข้อมูลประชาชน Single View</strong>
+                        <input type="text" id="searchMaster" placeholder="🔍 ค้นหาชื่อ หรือ เลข ปชช..." style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; width: 250px; outline:none;" onkeyup="renderMasterTable()">
+                    </div>
+                    <button class="btn btn-blue" onclick="openMasterForm(null)">➕ คีย์ข้อมูลประชาชนใหม่ (Direct Entry)</button>
+                </div>
+                <div class="table-wrapper">
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th style="width: 180px; padding: 14px 20px;">เลขบัตร ปชช.</th>
+                                <th style="width: 250px; padding: 14px 20px;">ชื่อ-นามสกุล</th>
+                                <th style="width: 150px; padding: 14px 20px;">เบอร์โทรศัพท์</th>
+                                <th style="padding: 14px 20px;">สวัสดิการที่ได้รับ</th>
+                                <th style="width: 100px; text-align: center; padding: 14px 20px;">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="master-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= MODALS & DRAWERS ================= -->
+    
+    <!-- Drawer: Master Data Direct Entry -->
+    <div id="master-drawer">
+        <div class="drawer-header">
+            <h3 id="drawer-title">เพิ่มข้อมูลประชาชนใหม่</h3>
+            <button class="btn" style="background: none; color: var(--text-muted); font-size:1.2rem;" onclick="closeMasterForm()">✕</button>
+        </div>
+        <div class="drawer-body">
+            <input type="hidden" id="form-id">
+            <div class="form-group"><label class="form-label">เลข ปชช. (13 หลัก) <span style="color:var(--danger)">*</span></label><input type="text" id="form-nid" class="form-input" maxlength="13"></div>
+            <div class="form-group"><label class="form-label">ชื่อ-นามสกุล <span style="color:var(--danger)">*</span></label><input type="text" id="form-name" class="form-input"></div>
+            <div class="form-group"><label class="form-label">เบอร์โทรศัพท์</label><input type="text" id="form-phone" class="form-input" maxlength="10"></div>
+            
+            <div class="welfare-section">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                    <span style="font-weight: 600; color: var(--primary);">✅ สิทธิสวัสดิการ</span>
+                    <button class="btn btn-blue" style="padding: 4px 10px; font-size: 0.75rem;" onclick="addWelfareField()">➕ เพิ่มสิทธิ</button>
+                </div>
+                <div id="welfare-container"></div>
+                <div id="welfare-empty" style="text-align:center; color:var(--text-muted); font-size:0.85rem; padding: 10px 0;">- ยังไม่ได้รับสวัสดิการ -</div>
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <button class="btn" style="background: white; border: 1px solid var(--border); flex: 1; justify-content: center;" onclick="closeMasterForm()">ยกเลิก</button>
+            <button class="btn btn-green" style="flex: 2; justify-content: center;" onclick="saveMasterData()">💾 บันทึกข้อมูลลง Master Data</button>
+        </div>
+    </div>
+
+    <!-- Modal: Task Report -->
+    <div class="modal-overlay" id="modal-task">
+        <div class="modal-card">
+            <h3 style="margin-bottom: 15px; color: var(--primary);">🟢 รายงานผลการลงพื้นที่</h3>
+            <textarea style="width: 100%; height: 100px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; outline: none; margin-bottom: 15px; font-family: inherit;" placeholder="พิมพ์สรุปผลการปฏิบัติงาน..."></textarea>
+            <div style="border: 2px dashed var(--border); border-radius: 6px; padding: 20px; text-align: center; color: var(--text-muted); margin-bottom: 20px; font-size: 0.85rem; cursor: pointer;">📸 ลากวางรูปภาพหลักฐานหน้างาน</div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="flex:1; border: 1px solid var(--border); background: white;" onclick="document.getElementById('modal-task').classList.remove('active')">ยกเลิก</button>
+                <button class="btn btn-green" style="flex:2; justify-content: center;" onclick="closeTask()">ส่งรายงานและปิดใบงาน</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">✅ ดำเนินการสำเร็จ!</div>
+
+    <script src="../assets/auth.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', () => CDPAuth.mountUserBadge());</script>
+    <script>
+        // ================= GLOBAL STATE & DATA =================
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function switchTab(viewId, element) {
+            document.querySelectorAll('.content-scroll').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            element.classList.add('active');
+            
+            const titles = { 
+                'view-inbox': 'Inbox รับงานดิจิทัล (Task Management)', 
+                'view-upload': 'นำเข้า & ล้างข้อมูล (Data Cleansing)', 
+                'view-conflict': 'ไกล่เกลี่ยข้อมูลซ้ำซ้อน (Conflict Resolver)',
+                'view-master': 'คลังข้อมูล Master Data (Direct Entry)'
+            };
+            document.getElementById('header-title').innerText = titles[viewId];
+            if(viewId === 'view-master') renderMasterTable();
+        }
+
+        // ================= MODULE 1: INBOX =================
+        let activeTaskId = null;
+        function acceptTask(taskId) {
+            const card = document.getElementById(taskId);
+            const btn = card.querySelector('.btn-blue');
+            btn.className = 'btn btn-green';
+            btn.innerText = '🟢 รายงานผลหน้างาน';
+            btn.onclick = () => openResolveModal(taskId);
+            document.getElementById('col-progress').appendChild(card);
+            showToast('บันทึก Timestamp และแจ้งเตือนผู้บริหารเรียบร้อย');
+        }
+
+        function openResolveModal(taskId) {
+            activeTaskId = taskId;
+            document.getElementById('modal-task').classList.add('active');
+        }
+
+        function closeTask() {
+            document.getElementById('modal-task').classList.remove('active');
+            const card = document.getElementById(activeTaskId);
+            card.style.borderLeftColor = 'var(--success)';
+            card.querySelector('.btn-green').remove();
+            
+            const badge = document.createElement('div');
+            badge.innerText = '✅ ปิดงานแล้ว';
+            badge.style.cssText = 'background: #ecfdf5; color: #059669; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; text-align: center; margin-top: 10px; font-weight: 500;';
+            card.appendChild(badge);
+            
+            document.getElementById('col-resolved').appendChild(card);
+            showToast('รายงานผลเสร็จสิ้น หมุดบนแผนที่ผู้บริหารเปลี่ยนเป็นสีเขียวแล้ว');
+        }
+
+        // ================= MODULE 2 & 3: UPLOAD & CLEANSING =================
+        let rawData = [];
+        let originalData = [];
+
+        function simulateUpload(element) {
+            element.style.display = 'none';
+            document.getElementById('quality-table-section').style.display = 'flex';
+            
+            // Generate 10 Mock Edge Cases for Cleansing
+            rawData = [
+                { row: 1, nid: "3100901234568", name: "นาย สมศักดิ์ รักดี", phone: "0812345678", welfare: "เบี้ยผู้สูงอายุ" },
+                { row: 2, nid: "31010987654", name: "นาง สมหญิง ใจกล้า", phone: "0891112222", welfare: "เบี้ยผู้สูงอายุ" }, // NID สั้น
+                { row: 3, nid: "1102212345611", name: "", phone: "0812223333", welfare: "เงินอุดหนุนเด็ก" }, // ชื่อว่าง
+                { row: 4, nid: "3100567890123", name: "นาย วันชัย ทองดี", phone: "812223333", welfare: "เบี้ยความพิการ" }, // เบอร์ไม่มี 0
+                { row: 5, nid: "310120011122A", name: "นาง วิไล พรหม", phone: "0855556666", welfare: "บัตรสวัสดิการ" }, // NID มีตัวอักษร
+                { row: 6, nid: "3101544444444", name: "นาย บุญส่ง มั่นคง", phone: "0811112233", welfare: "เบี้ยความพิการ" },
+                { row: 7, nid: "3101155555555", name: "นาง อมรา123", phone: "0823334444", welfare: "เบี้ยผู้สูงอายุ" }, // ชื่อมีเลข
+                { row: 8, nid: "3102000123123", name: "นาย เกษม ทรงพล", phone: "", welfare: "เบี้ยความพิการ" }, // ไม่มีเบอร์
+                { row: 9, nid: "1102577777777", name: "ด.ญ. กะทิ @สุข", phone: "0845556666", welfare: "รับถุงยังชีพ" }, // ชื่อมีอักขระ
+                { row: 10, nid: "3100888888888", name: "นาย สมชาย", phone: "0856667777", welfare: "เบี้ยผู้สูงอายุ" }
+            ];
+            originalData = JSON.parse(JSON.stringify(rawData));
+            processCleansingData();
+            showToast('Mapping หัวตารางสำเร็จ! เริ่มกระบวนการทำความสะอาดข้อมูล');
+        }
+
+        function processCleansingData() {
+            let countCritical = 0;
+            const validatedData = rawData.map(item => {
+                let status = { nid: "valid", name: "valid", phone: "valid" };
+                let tooltip = { nid: "", name: "", phone: "" };
+                let hasCritical = false;
+
+                const cleanNid = String(item.nid).replace(/[^0-9]/g, ''); 
+                if (item.nid === "" || item.nid !== cleanNid || cleanNid.length !== 13) {
+                    status.nid = "critical"; tooltip.nid = "เลข ปชช. ต้องเป็นตัวเลข 13 หลัก"; hasCritical = true;
+                }
+
+                const rawName = String(item.name).trim();
+                if (rawName === "" || /[0-9]/.test(rawName) || /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(rawName)) {
+                    status.name = "critical"; tooltip.name = "ห้ามเป็นค่าว่าง มีตัวเลข หรืออักขระพิเศษ"; hasCritical = true;
+                }
+
+                const cleanPhone = String(item.phone).replace(/[^0-9]/g, '');
+                if (item.phone === "" || item.phone === "-" || cleanPhone.length !== 10 || !cleanPhone.startsWith('0')) {
+                    status.phone = "warning"; tooltip.phone = "เบอร์ไม่สมบูรณ์";
+                }
+
+                if(hasCritical) countCritical++;
+                const isModified = JSON.stringify(originalData.find(d => d.row === item.row)) !== JSON.stringify(item);
+                return { ...item, status, tooltip, isModified };
+            });
+
+            const btnSave = document.getElementById('btn-batch-save');
+            if (countCritical > 0) {
+                btnSave.disabled = true; btnSave.innerText = `🔒 โปรดแก้สีแดง (${countCritical} จุด) ก่อนบันทึก`;
+            } else {
+                btnSave.disabled = false; btnSave.innerText = `🟢 บันทึกข้อมูลแก้ไขทั้งหมด (Batch Save)`;
+            }
+
+            renderCleansingTable(validatedData);
+        }
+
+        function renderCleansingTable(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = data.map((d, index) => {
+                const buildCell = (field, value, status, tooltip) => {
+                    let cls = status === "critical" ? "td-critical" : (status === "warning" ? "td-warning" : "");
+                    return `<td class="${cls}" ondblclick="enableEdit(this, 'c-input-${index}-${field}')">
+                                <div class="cell-content">${value==="" ? "<i style='color:#cbd5e1'>- ว่าง -</i>" : value}</div>
+                                <input type="text" class="cell-input" id="c-input-${index}-${field}" value="${value}" onblur="disableEdit(this, ${index}, '${field}')">
+                                ${tooltip ? `<div class="cell-tooltip">${tooltip}</div>` : ''}
+                            </td>`;
+                };
+                return `<tr>
+                            <td style="text-align: center; color: var(--text-muted); font-size:0.85rem;">${d.row}</td>
+                            ${buildCell('nid', d.nid, d.status.nid, d.tooltip.nid)}
+                            ${buildCell('name', d.name, d.status.name, d.tooltip.name)}
+                            ${buildCell('phone', d.phone, d.status.phone, d.tooltip.phone)}
+                            <td ondblclick="enableEdit(this, 'c-input-${index}-welfare')">
+                                <div class="cell-content">${d.welfare}</div>
+                                <input type="text" class="cell-input" id="c-input-${index}-welfare" value="${d.welfare}" onblur="disableEdit(this, ${index}, 'welfare')">
+                            </td>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <button class="btn-undo" onclick="restoreRow(${index})" ${!d.isModified ? 'disabled' : ''}>↩️ Undo</button>
+                            </td>
+                        </tr>`;
+            }).join('');
+        }
+
+        function enableEdit(td, id) {
+            td.classList.add('editing');
+            const input = document.getElementById(id);
+            input.focus(); input.setSelectionRange(input.value.length, input.value.length);
+        }
+
+        function disableEdit(input, index, field) {
+            input.closest('td').classList.remove('editing');
+            if (rawData[index][field] !== input.value) {
+                rawData[index][field] = input.value;
+                processCleansingData();
+            }
+        }
+
+        function restoreRow(index) {
+            rawData[index] = JSON.parse(JSON.stringify(originalData[index]));
+            processCleansingData();
+        }
+
+        function batchSaveCleansing() {
+            // Push clean data to Master Data Array
+            rawData.forEach(r => {
+                if(!customerData.find(c => c.nid === r.nid)) {
+                    const newId = customerData.length > 0 ? Math.max(...customerData.map(c => c.id)) + 1 : 1;
+                    customerData.unshift({ id: newId, nid: r.nid, name: r.name, phone: r.phone, welfares: [{name: r.welfare, amount:0, status:'อนุมัติแล้ว'}] });
+                }
+            });
+            showToast('🟢 บันทึกข้อมูลที่คลีนแล้วส่งเข้า Master Data สำเร็จ!');
+            document.getElementById('quality-table-section').style.display = 'none';
+            document.querySelector('.drop-zone').style.display = 'block';
+        }
+
+        // ================= MODULE 4: CONFLICT RESOLVER =================
+        function resolveConflict(cardId) {
+            document.getElementById(cardId).style.display = 'none';
+            showToast('✅ ข้อมูลถูก Merge และอัปเดตลง Master Database เรียบร้อย');
+        }
+
+        // ================= MODULE 5: MASTER DATA (Direct Entry) =================
+        let customerData = [
+            { id: 1, nid: "3100901234568", name: "นาย สมศักดิ์ รักดี", phone: "0812345678", welfares: [{ name: "เบี้ยยังชีพผู้สูงอายุ", amount: 700, status: "อนุมัติแล้ว" }] },
+            { id: 2, nid: "1102577777777", name: "ด.ญ. กะทิ สุขสวัสดิ์", phone: "0845556666", welfares: [{ name: "เงินอุดหนุนเด็กแรกเกิด", amount: 600, status: "อนุมัติแล้ว" }] }
+        ];
+
+        function renderMasterTable() {
+            const searchInput = document.getElementById('searchMaster').value.toLowerCase();
+            const tbody = document.getElementById('master-tbody');
+            const filteredData = customerData.filter(c => c.name.toLowerCase().includes(searchInput) || c.nid.includes(searchInput));
+
+            if(filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">- ไม่พบข้อมูลประชาชน -</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredData.map(c => {
+                let welfareSummary = `<span style="color:var(--text-muted); font-size:0.8rem; font-style:italic;">ไม่มีข้อมูลสวัสดิการ</span>`;
+                if(c.welfares.length > 0) {
+                    welfareSummary = c.welfares.map(w => `<span style="display:inline-block; background:#E0E7FF; color:#3730A3; padding:4px 8px; border-radius:4px; font-size:0.8rem; margin:2px 4px 2px 0;">🏷️ ${w.name} (${w.status})</span>`).join('');
+                }
+                return `<tr>
+                            <td style="padding: 16px 20px; font-family: monospace; color: var(--text-muted); border-bottom: 1px solid var(--border);">${c.nid}</td>
+                            <td style="padding: 16px 20px; font-weight: 500; border-bottom: 1px solid var(--border);">${c.name}</td>
+                            <td style="padding: 16px 20px; border-bottom: 1px solid var(--border);">${c.phone || '-'}</td>
+                            <td style="padding: 16px 20px; border-bottom: 1px solid var(--border);">${welfareSummary}</td>
+                            <td style="padding: 16px 20px; text-align: center; border-bottom: 1px solid var(--border);">
+                                <button class="btn btn-blue" style="padding:6px 10px; font-size:0.75rem;" onclick="openMasterForm(${c.id})">✏️ แก้ไขข้อมูล</button>
+                            </td>
+                        </tr>`;
+            }).join('');
+        }
+
+        function openMasterForm(id) {
+            const container = document.getElementById('welfare-container');
+            container.innerHTML = ''; 
+
+            if (id) {
+                document.getElementById('drawer-title').innerText = "แก้ไขข้อมูลประชาชน";
+                const person = customerData.find(c => c.id === id);
+                document.getElementById('form-id').value = person.id;
+                document.getElementById('form-nid').value = person.nid;
+                document.getElementById('form-name').value = person.name;
+                document.getElementById('form-phone').value = person.phone;
+                person.welfares.forEach(w => addWelfareField(w.name, w.amount, w.status));
+            } else {
+                document.getElementById('drawer-title').innerText = "คีย์ข้อมูลประชาชนใหม่ (Direct Entry)";
+                document.getElementById('form-id').value = "";
+                document.getElementById('form-nid').value = "";
+                document.getElementById('form-name').value = "";
+                document.getElementById('form-phone').value = "";
+            }
+            
+            toggleEmptyState();
+            document.getElementById('master-drawer').classList.add('open');
+        }
+
+        function closeMasterForm() { document.getElementById('master-drawer').classList.remove('open'); }
+
+        function addWelfareField(name = '', amount = '', status = 'อนุมัติแล้ว') {
+            const container = document.getElementById('welfare-container');
+            const row = document.createElement('div');
+            row.className = 'welfare-row';
+            row.innerHTML = `
+                <input type="text" class="wf-name" value="${name}" placeholder="ชื่อสวัสดิการ" style="flex:2">
+                <input type="number" class="wf-amt" value="${amount}" placeholder="จำนวนเงิน" style="flex:1">
+                <select class="wf-status" style="flex:1.5">
+                    <option value="รอจัดสรร" ${status==='รอจัดสรร'?'selected':''}>รอจัดสรร</option>
+                    <option value="อนุมัติแล้ว" ${status==='อนุมัติแล้ว'?'selected':''}>อนุมัติแล้ว</option>
+                </select>
+                <button class="btn btn-red" style="padding: 6px 10px;" onclick="this.parentElement.remove(); toggleEmptyState();">✕</button>
+            `;
+            container.appendChild(row);
+            toggleEmptyState();
+        }
+
+        function toggleEmptyState() {
+            document.getElementById('welfare-empty').style.display = document.getElementById('welfare-container').children.length === 0 ? 'block' : 'none';
+        }
+
+        function saveMasterData() {
+            const nid = document.getElementById('form-nid').value.trim();
+            const name = document.getElementById('form-name').value.trim();
+            const phone = document.getElementById('form-phone').value.trim();
+            const id = document.getElementById('form-id').value;
+
+            if(!nid || nid.length !== 13) return alert('⚠️ กรุณาระบุเลขประจำตัวประชาชน 13 หลักให้ถูกต้อง');
+            if(!name) return alert('⚠️ กรุณาระบุชื่อ-นามสกุล');
+
+            let welfares = [];
+            const rows = document.querySelectorAll('.welfare-row');
+            for (let i = 0; i < rows.length; i++) {
+                const wfName = rows[i].querySelector('.wf-name').value.trim();
+                if (wfName === "") return alert('⚠️ กรุณาระบุชื่อสวัสดิการให้ครบถ้วน');
+                welfares.push({ 
+                    name: wfName, 
+                    amount: parseFloat(rows[i].querySelector('.wf-amt').value) || 0, 
+                    status: rows[i].querySelector('.wf-status').value 
+                });
+            }
+
+            if (id) {
+                const index = customerData.findIndex(c => c.id === parseInt(id));
+                if(index > -1) customerData[index] = { id: parseInt(id), nid, name, phone, welfares };
+                showToast('💾 อัปเดตข้อมูลและสวัสดิการสำเร็จ');
+            } else {
+                const newId = customerData.length > 0 ? Math.max(...customerData.map(c => c.id)) + 1 : 1;
+                customerData.unshift({ id: newId, nid, name, phone, welfares });
+                showToast('🎉 คีย์ข้อมูลประชาชนรายใหม่เข้าสู่ระบบสำเร็จ');
+            }
+
+            closeMasterForm();
+            renderMasterTable();
+        }
+
+    </script>
+</body>
+</html>
